@@ -10,6 +10,8 @@
     "lodash": "^4.17.15",
     "puppeteer": "^2.0.0",
     "request": "^2.88.0",
-    "request-promise": "^4.2.5"
+    "request-promise": "^4.2.5",
+    "sequelize": "^5.21.3",
+    "sqlite3": "^4.1.1"
   }
 }

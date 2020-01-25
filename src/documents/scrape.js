@@ -3,10 +3,11 @@ const cheerio = require('cheerio');
 const _ = require('lodash');
 const fs = require('fs');
 
-const getSessionCookie = require('./getSessionCookie');
+const getSessionCookie = require('../getSessionCookie');
 
+const HOSTNAME = 'http://www.dublincity.ie';
 const url = (applicationId) => (
-  `http://www.dublincity.ie/AniteIMWebSearch/ExternalEntryPoint.aspx?SEARCH_TYPE=1&DOC_CLASS_CODE=PL&folder1_ref=${applicationId}`
+  `${HOSTNAME}/AniteIMWebSearch/ExternalEntryPoint.aspx?SEARCH_TYPE=1&DOC_CLASS_CODE=PL&folder1_ref=${applicationId}`
 );
 
 const scrapeResults = (html) => {
@@ -34,22 +35,23 @@ const scrapeResults = (html) => {
   return _.drop(rows, 2);
 };
 
-const main = async () => {
-  const applicationId = 'WEB1259/19';
-  // This page requires a cookie to be set before it will load.
-  const cookieString = await getSessionCookie();
+module.exports.scrapeDocumentsForPlanningApplication =
+  async (planningApplicationId, cookieString) => {
+    // This page requires a cookie to be set before it will load.
+    if (!cookieString) {
+      cookieString = await getSessionCookie();
+    }
 
-  const jar = rp.jar();
-  jar.setCookie(cookieString, 'http://www.dublincity.ie');
+    const jar = rp.jar();
+    jar.setCookie(cookieString, HOSTNAME);
 
-  var options = {
-    jar,
-    uri: url(applicationId),
+    var options = {
+      jar,
+      uri: url(planningApplicationId),
+    };
+
+    const html = await rp(options);
+    const pageResults = scrapeResults(html);
+    return pageResults;
   };
 
-  const html = await rp(options);
-  const pageResults = scrapeResults(html);
-  console.log(JSON.stringify(pageResults, null, 2));
-};
-
-main();
