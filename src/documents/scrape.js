@@ -35,23 +35,40 @@ const scrapeResults = (html) => {
   return _.drop(rows, 2);
 };
 
+const constructRequestOptions = async (planningApplicationId, cookieString) => {
+  if (!cookieString) {
+    cookieString = await getSessionCookie();
+  }
+
+  const jar = rp.jar();
+  jar.setCookie(cookieString, HOSTNAME);
+
+  return {
+    jar,
+    uri: url(planningApplicationId),
+  };
+};
+
+const fetchHtml = async (options) => {
+  let html = null;
+  try {
+    html = await rp(options);
+  } catch (err) {
+    console.warn('Error scraping document with URL', options.uri);
+    console.warn(err);
+  }
+  return html;
+};
+
 module.exports.scrapeDocumentsForPlanningApplication =
   async (planningApplicationId, cookieString) => {
+    const options = await constructRequestOptions(planningApplicationId, cookieString);
     // This page requires a cookie to be set before it will load.
-    if (!cookieString) {
-      cookieString = await getSessionCookie();
+    const html = await fetchHtml(options);
+    if (html) {
+      const pageResults = scrapeResults(html);
+      return pageResults;
     }
-
-    const jar = rp.jar();
-    jar.setCookie(cookieString, HOSTNAME);
-
-    var options = {
-      jar,
-      uri: url(planningApplicationId),
-    };
-
-    const html = await rp(options);
-    const pageResults = scrapeResults(html);
-    return pageResults;
+    return null;
   };
 

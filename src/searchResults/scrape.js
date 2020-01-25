@@ -3,9 +3,7 @@ const cheerio = require('cheerio');
 const _ = require('lodash');
 const fs = require('fs');
 
-const url = (startIndex) => {
-  return `http://www.dublincity.ie/swiftlg/apas/run/wphappsearchres.displayResultsURL?ResultID=5335334&StartIndex=${startIndex}&SortOrder=APNID:DESC&DispResultsAs=WPHAPPSEARCHRES&BackURL=%3Ca%20href=wphappcriteria.display?paSearchKey=4583607%3ESearch%20Criteria%3C/a%3E`;
-};
+const sleep = require('../sleep');
 
 const scrapeResultsFromPage = (html) => {
   const $ = cheerio.load(html);
@@ -33,14 +31,24 @@ const scrapeResultsFromPage = (html) => {
   return _.drop(rows);
 };
 
-module.exports.scrapeMultiplePages = async (pagesToScrape = 2, resultsPerPage = 10) => {
-  // TODO: I'm scraping all the pages in parallel here. Not very friendly to the server.
-  const results = await Promise.all(_.times(pagesToScrape, async (i) => {
-    const uri = url((i * resultsPerPage) + 1);
+module.exports.scrapeMultiplePages = async (createSearchUrl, opts = {}) => {
+  const settings = {
+    pagesToScrape: 2,
+    resultsPerPage: 10,
+    sleepBetweenRequests: 200,
+    ...opts,
+  };
+
+  console.log('pagesToScrape', settings.pagesToScrape);
+
+  let results = [];
+  for (const pageIndex of _.times(settings.pagesToScrape)) {
+    const uri = createSearchUrl((pageIndex * settings.resultsPerPage) + 1);
     const html = await rp(uri);
     const pageResults = scrapeResultsFromPage(html);
-    return pageResults;
-  }));
+    results = [...results, ...pageResults];
+    await sleep(settings.sleepBetweenRequests);
+  }
 
   return _.flattenDeep(results);
 };

@@ -1,3 +1,4 @@
 node_modules
 *.swp
 *.sqlite3
+*.pdf

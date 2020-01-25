@@ -1,51 +1,29 @@
-const sequelize = require('../database');
-const { scrapeMultiplePages } = require('./scrape');
-const PlanningApplication = require('../models/PlanningApplication');
-const PlanningApplicationDocument = require('../models/PlanningApplicationDocument');
-const { scrapeDocumentsForPlanningApplication } = require('../documents/scrape');
-const getSessionCookie = require('../getSessionCookie');
+const sequelize = require('./database');
+const PlanningApplication = require('./planningApplication/model');
+const scrapeAndStoreSearchResults = require('./searchResults/scrapeAndStore');
+const { findAllPlanningApplicationsWithoutDocuments } = require('./planningApplication/scopes');
+const scrapeAndStoreDocuments = require('./documents/scrapeAndStore');
 
-const prepareResultForDatabase = (result) => ({
-  planningApplicationId: result.applicationId,
-  description: result.description,
-  addressText: result.location,
-});
+const sleep = require('./sleep');
 
-const prepareDocumentForDatabase = (result, planningApplicationId) => ({
-  documentId: result.id,
-  description: result.description,
-  dateText: result.date,
-  ref: result.ref,
-  planningApplicationId,
-});
+const PAGES_TO_SCRAPE = 49;
 
-const scrapeAndStoreSearchResults = async () => {
-  const results = await scrapeMultiplePages();
-  await PlanningApplication.bulkCreate(results.map(prepareResultForDatabase));
-  return null;
-};
-
-async function scrapeAndStoreDocuments(planningApplications) {
-  for(const app of planningApplications) {
-    const planningAppId = app.get('planningApplicationId');
-    console.log('scraping documents for', app.get('id'));
-    // This is one less request per planning application. Faster and easier on the server.
-    const sessionCookie = await getSessionCookie();
-    const results = await scrapeDocumentsForPlanningApplication(planningAppId, sessionCookie);
-    await PlanningApplicationDocument.bulkCreate(results.map((result) => (
-      prepareDocumentForDatabase(result, app.get('id'))
-    )));
-  }
-};
+// To get a URL, you have to manually perform a search on the website, then navigate to the
+// second tab and back to the first tab. Take the URL and enter it here.
+// The search below is everything in inchicore.
+const createSearchUrl = (startIndex) => (
+  `http://www.dublincity.ie/swiftlg/apas/run/WPHAPPSEARCHRES.displayResultsURL?ResultID=5337869&StartIndex=${startIndex}&SortOrder=APNID:DESC&DispResultsAs=WPHAPPSEARCHRES&BackURL=%3Ca%20href=wphappcriteria.display?paSearchKey=4585855%3ESearch%20Criteria%3C/a%3E`
+);
 
 const main = async () => {
-  await sequelize.sync({ force: true })
+  await sequelize.sync();
   console.log('database schema synced');
-  await scrapeAndStoreSearchResults();
 
-  console.log('records created');
-  const allRecords = await PlanningApplication.findAll();
-  await scrapeAndStoreDocuments(allRecords);
+  // await scrapeAndStoreSearchResults(createSearchUrl, PAGES_TO_SCRAPE);
+  // console.log('records created');
+
+  const allRecordsWithoutDocs = await findAllPlanningApplicationsWithoutDocuments();
+  await scrapeAndStoreDocuments(allRecordsWithoutDocs);
 };
 
 main()

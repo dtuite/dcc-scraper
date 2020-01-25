@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize');
 
 const sequelize = require('../database');
-const PlanningApplication = require('./PlanningApplication');
+const PlanningApplication = require('../planningApplication/model');
 
 class PlanningApplicationDocument extends Sequelize.Model {}
 PlanningApplicationDocument.init({
