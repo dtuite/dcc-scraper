@@ -1,8 +1,13 @@
 const sequelize = require('./database');
 const PlanningApplication = require('./planningApplication/model');
 const scrapeAndStoreSearchResults = require('./searchResults/scrapeAndStore');
-const { findAllPlanningApplicationsWithoutDocuments } = require('./planningApplication/scopes');
+const {
+  findAllPlanningApplicationsWithoutDocuments,
+} = require('./planningApplication/scopes');
 const scrapeAndStoreDocuments = require('./documents/scrapeAndStore');
+const {
+  scrapeAndUpdateMultiple: scrapeAndUpdatePlanningApplications,
+} = require('./planningApplication/scrape');
 
 const sleep = require('./sleep');
 
@@ -22,8 +27,16 @@ const main = async () => {
   // await scrapeAndStoreSearchResults(createSearchUrl, PAGES_TO_SCRAPE);
   // console.log('records created');
 
-  const allRecordsWithoutDocs = await findAllPlanningApplicationsWithoutDocuments();
-  await scrapeAndStoreDocuments(allRecordsWithoutDocs);
+  // const allRecordsWithoutDocs = await findAllPlanningApplicationsWithoutDocuments();
+  // await scrapeAndStoreDocuments(allRecordsWithoutDocs);
+
+  const allRecordsNeedingScrape = await PlanningApplication.findAll({
+    where: {
+      registrationDate: null,
+    },
+    limit: 50,
+  });
+  await scrapeAndUpdatePlanningApplications(allRecordsNeedingScrape);
 };
 
 main()
