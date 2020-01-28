@@ -25,3 +25,15 @@ It doesn't actually download any documents. It just records their details.
  2. It doesn't yet record the planning decision.
  3. It's not capable of executing searches automatically. You have to manually run a search
     then feed the search URL into the code to scrape the results.
+ 4. Create a CLI with options and flags.
+
+# Instructions
+
+There is no CLI yet. You have to manually edit the `src/index.js` file to tell the scraoer
+what to do. Read the code and you'll get it pretty quickly.
+
+Run it like this:
+
+```
+node src/index.js
+```
