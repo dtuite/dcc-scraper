@@ -37,3 +37,13 @@ Run it like this:
 ```
 node src/index.js
 ```
+
+# Instructions for Lauren
+
+Open terminal
+
+```
+cd /Users/laurennorton/Desktop/dcc-scraper-master
+```
+
+open the 
